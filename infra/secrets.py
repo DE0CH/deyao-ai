@@ -11,6 +11,10 @@ the old values back). The part's pod gets its annotation bumped so it restarts w
   tunnel   tunnel.enc.yaml, Secret tunnel-token — token=env:TUNNEL_TOKEN (infra/cloudflare.py)
   dsh-web  dsh-web.enc.yaml, Secret dsh-web-secrets — CF_ACCESS_CLIENT_ID=env:DSH_WEB_ACCESS_ID,
            CF_ACCESS_CLIENT_SECRET=env:DSH_WEB_ACCESS_SECRET (infra/cloudflare.py)
+  chat-pigeon, chat-magpie, chat-hermit   the chat's services (k8s/chat), Secrets of the same names; every key from
+           infra/chat-keys.py's file (`set -a; . FILE; set +a` first)
+  chat-db-magpie, chat-db-hermit          chat-db's role logins (basic-auth: username, password)
+  chat-db-s3                              chat-db's Barman store: ACCESS_KEY_ID, SECRET_ACCESS_KEY
 Prints names only, never a value."""
 import hashlib, json, os, re, subprocess, sys, tempfile
 
@@ -20,7 +24,15 @@ PARTS = {  # part → (file, Secret name, manifest under k8s/ whose pod restarts
     "search": ("search.enc.yaml", "search-secrets", "search/search.yaml", "services/secrets-rev-search"),
     "tunnel": ("tunnel.enc.yaml", "tunnel-token", "edge/cloudflared.yaml", "services/secrets-rev-tunnel"),
     "dsh-web": ("dsh-web.enc.yaml", "dsh-web-secrets", "dsh-web/dsh-web.yaml", "services/secrets-rev-dsh-web"),
+    "chat-pigeon": ("chat-pigeon.enc.yaml", "chat-pigeon", "chat/pigeon.yaml", "services/secrets-rev-chat-pigeon"),
+    "chat-magpie": ("chat-magpie.enc.yaml", "chat-magpie", "chat/magpie.yaml", "services/secrets-rev-chat-magpie"),
+    "chat-hermit": ("chat-hermit.enc.yaml", "chat-hermit", "chat/hermit.yaml", "services/secrets-rev-chat-hermit"),
+    # CloudNativePG reads these itself (no pod to restart)
+    "chat-db-magpie": ("chat-db-magpie.enc.yaml", "chat-db-magpie", None, None),
+    "chat-db-hermit": ("chat-db-hermit.enc.yaml", "chat-db-hermit", None, None),
+    "chat-db-s3": ("chat-db-s3.enc.yaml", "chat-db-s3", None, None),
 }
+SECRET_TYPES = {"chat-db-magpie": "kubernetes.io/basic-auth", "chat-db-hermit": "kubernetes.io/basic-auth"}
 
 
 def value(src):
@@ -44,7 +56,8 @@ def main():
     for a in args:
         k, _, src = a.partition("=")
         data[k] = value(src or "env:" + k)
-    doc = {"apiVersion": "v1", "kind": "Secret", "metadata": {"name": secret, "namespace": NS}, "type": "Opaque", "stringData": data}
+    doc = {"apiVersion": "v1", "kind": "Secret", "metadata": {"name": secret, "namespace": NS},
+           "type": SECRET_TYPES.get(part, "Opaque"), "stringData": data}
     recipient = open(os.path.join(ROOT, "keys/cluster-age.pub")).read().strip()
     with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as t:
         json.dump(doc, t)
@@ -55,6 +68,9 @@ def main():
         os.unlink(t.name)
     out = os.path.join(ROOT, "k8s/secrets", fname)
     open(out, "w").write(enc)
+    if manifest is None:
+        print(f"ok: k8s/secrets/{fname} ({', '.join(sorted(data))})")
+        return
     rev = hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()[:12]
     mpath = os.path.join(ROOT, "k8s", manifest)
     m = open(mpath).read()

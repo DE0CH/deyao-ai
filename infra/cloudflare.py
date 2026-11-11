@@ -9,14 +9,23 @@
       Access first, then the tunnel, DNS last:
         search.deyaochen.com → transcript search (http://search.services.svc.cluster.local:8090)
         dsh.deyaochen.com    → the persistent dsh web UI (http://dsh-web.services.svc.cluster.local:8095)
+        chat.deyaochen.com   → Jarvis 4's chat web app, pigeon (http://pigeon.services.svc.cluster.local)
+        chat-gw.deyaochen.com → hermit-jarvis's gateway listener (http://hermit-gw.services.svc.cluster.local), what each
+                               aviary session machine's aviary-gateway calls (DE0CH/jarvis4 aviary/README.md)
       The service token transcript-search (sessions' CLI) is kept unless ROTATE=1; a newly minted one's values go to OUT
       (mode 600) as SEARCH_ACCESS_ID/SECRET, with the tunnel's TUNNEL_TOKEN. Likewise the service token dsh-web (the dsh web
       UI's way into the sessions' own origins <id>-s.deyaochen.com, whose Access admits any service token of the account)
-      as DSH_WEB_ACCESS_ID/SECRET.
+      as DSH_WEB_ACCESS_ID/SECRET. And the service token aviary-gateway (every aviary session machine's, in the Jarvis 4 store
+      `aviary`) as AVIARY_GW_ACCESS_ID/SECRET, and hermit-jarvis's own token hermit-jarvis (its way into Jarvis 4's device routes; the
+      router admits its client id, DE0CH/jarvis4 k8s/cluster/router/router.yaml HERMIT_CLIENT_ID) as
+      HERMIT_JARVIS_ACCESS_ID/SECRET. Prints the chat app's audience (hermit-jarvis's HERMIT_ACCESS_AUD) and that client id.
 
 Access apps:
   "Transcript search"  search.deyaochen.com  Deyao's email (the page at /), or the service token transcript-search
   "DeepSeek Harness"   dsh.deyaochen.com     Deyao's email, or the service token dsh-web (health checks)
+  "Jarvis 4 chat"      chat.deyaochen.com    Deyao's email (pigeon checks the Access token again itself)
+  "Jarvis 4 chat gateway" chat-gw.deyaochen.com  the service token aviary-gateway only (the sandbox token in each request
+                       says which session it is; hermit-jarvis checks it)
 """
 import json, os, sys, urllib.request, urllib.error
 
@@ -28,6 +37,10 @@ SEARCH_HOST = "search.deyaochen.com"
 SEARCH_ORIGIN = "http://search.services.svc.cluster.local:8090"
 DSH_HOST = "dsh.deyaochen.com"
 DSH_ORIGIN = "http://dsh-web.services.svc.cluster.local:8095"
+CHAT_HOST = "chat.deyaochen.com"
+CHAT_ORIGIN = "http://pigeon.services.svc.cluster.local"
+CHAT_GW_HOST = "chat-gw.deyaochen.com"
+CHAT_GW_ORIGIN = "http://hermit-gw.services.svc.cluster.local"
 API = "https://api.cloudflare.com/client/v4"
 
 
@@ -82,13 +95,21 @@ def main():
         {"name": "Deyao", "decision": "allow", "include": [{"email": {"email": EMAIL}}]},
         {"name": "checks with the dsh-web token (held by dsh-web itself)", "decision": "non_identity",
          "include": [{"service_token": {"token_id": dtok["id"]}}]}])
+    caud = access_app("Jarvis 4 chat", CHAT_HOST, [
+        {"name": "Deyao", "decision": "allow", "include": [{"email": {"email": EMAIL}}]}])
+    gtok = service_token("aviary-gateway", vals, "AVIARY_GW_ACCESS_ID", "AVIARY_GW_ACCESS_SECRET")
+    htok = service_token("hermit-jarvis", vals, "HERMIT_JARVIS_ACCESS_ID", "HERMIT_JARVIS_ACCESS_SECRET")
+    gaud = access_app("Jarvis 4 chat gateway", CHAT_GW_HOST, [
+        {"name": "aviary session machines", "decision": "non_identity",
+         "include": [{"service_token": {"token_id": gtok["id"]}}]}])
     tunnels = call("GET", f"/accounts/{ACCOUNT}/cfd_tunnel?name={TUNNEL}&is_deleted=false")
     tun = tunnels[0] if tunnels else call("POST", f"/accounts/{ACCOUNT}/cfd_tunnel", {"name": TUNNEL, "config_src": "cloudflare"})
     call("PUT", f"/accounts/{ACCOUNT}/cfd_tunnel/{tun['id']}/configurations", {"config": {"ingress": [
         {"hostname": SEARCH_HOST, "service": SEARCH_ORIGIN}, {"hostname": DSH_HOST, "service": DSH_ORIGIN},
+        {"hostname": CHAT_HOST, "service": CHAT_ORIGIN}, {"hostname": CHAT_GW_HOST, "service": CHAT_GW_ORIGIN},
         {"service": "http_status:404"}]}})
     vals["TUNNEL_TOKEN"] = call("GET", f"/accounts/{ACCOUNT}/cfd_tunnel/{tun['id']}/token")
-    for host in (SEARCH_HOST, DSH_HOST):
+    for host in (SEARCH_HOST, DSH_HOST, CHAT_HOST, CHAT_GW_HOST):
         rec = {"type": "CNAME", "name": host, "content": f"{tun['id']}.cfargotunnel.com", "proxied": True,
                "comment": "tunnel services (DE0CH/services)"}
         recs = call("GET", f"/zones/{ZONE}/dns_records?name={host}")
@@ -98,6 +119,8 @@ def main():
         f.writelines(f"{k}={v}\n" for k, v in vals.items())
     print(f"ok: tunnel {TUNNEL} {tun['id']}: https://{SEARCH_HOST}/ behind Access (aud {aud}, client id {tok['client_id']}), "
           f"https://{DSH_HOST}/ behind Access (aud {daud}; dsh-web token {dtok['client_id']}); "
+          f"https://{CHAT_HOST}/ (HERMIT_ACCESS_AUD={caud}), https://{CHAT_GW_HOST}/ (aud {gaud}; aviary-gateway token "
+          f"{gtok['client_id']}); HERMIT_CLIENT_ID={htok['client_id']}; "
           f"new values ({', '.join(sorted(vals))}) in {out}")
 
 

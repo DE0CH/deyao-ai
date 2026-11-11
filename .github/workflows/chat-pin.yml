@@ -1,0 +1,61 @@
+name: chat-pin
+# Dogfooding (Deyao, 2026-11-11): Jarvis 4's chat (k8s/chat) follows its sources' main as soon as each build passes,
+# pinned by digest (never older than the current pin):
+#   pigeon, magpie  ghcr.io/de0ch/{pigeon,magpie}:<sha12> of DE0CH/aviary's newest release (made only when its CI passed)
+#   pigeon-app      ghcr.io/de0ch/pigeon-app:<sha12> of DE0CH/claudecodeui main's newest successful pigeon-app run
+#   hermit-jarvis   ghcr.io/de0ch/hermit-jarvis:latest (DE0CH/jarvis4 aviary.yml pushes it only after its tests)
+# A commit by this workflow with the deploy key PIN_DEPLOY_KEY; Flux rolls it out. DE0CH/jarvis4 aviary-pin.yml pins the
+# sessions' supervisor of the same aviary releases.
+on:
+  schedule: [{ cron: "*/15 * * * *" }]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency: { group: chat-pin, cancel-in-progress: false }
+jobs:
+  pin:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ssh-key: "${{ secrets.PIN_DEPLOY_KEY }}" }
+      - uses: imjasonh/setup-crane@v0.4
+      - name: newest builds → digests → manifests
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          set -euo pipefail
+          D=k8s/chat
+          # pin IMAGE (repo) to TAG in FILE, unless the file already names a newer source commit (OLDER_THAN)
+          pin() { local repo=$1 tag=$2 file=$3 digest
+            digest="$(crane digest "ghcr.io/de0ch/$repo:$tag")"
+            sed -i -E "s#ghcr.io/de0ch/$repo:[A-Za-z0-9_.-]+(@sha256:[0-9a-f]{64})?#ghcr.io/de0ch/$repo:$tag@$digest#g" "$file"; }
+          newer() { local src=$1 cur=$2 new=$3   # is commit new ahead of commit cur in repo src (cur a placeholder: yes)
+            [[ "$cur" =~ ^[0-9a-f]{12}$ ]] || return 0; [ "$cur" != "$new" ] || return 1
+            [ "$(gh api "repos/$src/compare/$cur...$new" --jq .status 2>/dev/null)" = ahead ]; }
+          # aviary: pigeon and magpie
+          tag="$(gh release list -R DE0CH/aviary --limit 50 --json tagName,createdAt \
+            --jq '[.[] | select(.tagName | startswith("aviary-"))] | sort_by(.createdAt) | last | .tagName // ""')"
+          if [ -n "$tag" ]; then
+            new="${tag#aviary-}"; cur="$(grep -ho 'de0ch/magpie:[A-Za-z0-9_]*' $D/magpie.yaml | head -1 | cut -d: -f2)"
+            if newer DE0CH/aviary "$cur" "$new"; then pin magpie "$new" $D/magpie.yaml; pin pigeon "$new" $D/pigeon.yaml; fi
+          fi
+          # claudecodeui: the app bundle
+          app="$(gh run list -R DE0CH/claudecodeui -w pigeon-app.yml -b main -s success -L 1 --json headSha --jq '.[0].headSha // ""')"
+          if [ -n "$app" ]; then
+            new="${app::12}"; cur="$(grep -ho 'de0ch/pigeon-app:[A-Za-z0-9_]*' $D/pigeon.yaml | head -1 | cut -d: -f2)"
+            if newer DE0CH/claudecodeui "$cur" "$new"; then pin pigeon-app "$new" $D/pigeon.yaml; fi
+          fi
+          # jarvis4: hermit-jarvis (its sha tag of the :latest digest)
+          hj="$(crane config ghcr.io/de0ch/hermit-jarvis:latest 2>/dev/null | python3 -c 'import json,sys;print(json.load(sys.stdin)["config"]["Labels"].get("org.opencontainers.image.revision",""))' || true)"
+          if [ -n "$hj" ]; then
+            new="${hj::12}"; cur="$(grep -ho 'de0ch/hermit-jarvis:sha-[0-9a-f]*' $D/hermit.yaml | head -1 | cut -d- -f3 || true)"
+            if newer DE0CH/jarvis4 "$cur" "$new"; then pin hermit-jarvis "sha-$new" $D/hermit.yaml; fi
+          fi
+          git diff --stat
+      - name: push
+        run: |
+          git diff --quiet && exit 0
+          git config user.name "services-ci"; git config user.email "ci@services.invalid"
+          git commit -qam "chat: pin the newest builds [skip ci]"
+          for attempt in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0; sleep 5; done
+          exit 1

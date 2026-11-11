@@ -3,4 +3,4 @@
 # which may change nothing outside the namespace. SOPS-encrypted Secrets: infra/secrets.py.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-resources: [secrets, edge, search, dsh-web]
+resources: [secrets, edge, search, dsh-web, chat]
