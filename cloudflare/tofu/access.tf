@@ -17,12 +17,12 @@ resource "cloudflare_zero_trust_organization" "de0ch" {
   auto_redirect_to_identity                   = false
   deny_unmatched_requests_exempted_zone_names = []
   # Cloudflare's own sign-in page, branded (Deyao, 2026-10-28): the Jarvis 4 icon (DE0CH/jarvis4 app/assets/icon.png at a
-  # pinned commit, so a later edit of the icon can't change this page unseen) on its own dark navy, white text
+  # pinned commit, so a later edit of the icon can't change this page unseen) on its own dark navy, white text.
+  # No header text: Cloudflare draws it in a box above the sign-in buttons that reads as a button (Deyao, 2026-11-12)
   login_design = {
     background_color = "#04090F"
     text_color       = "#FFFFFF"
     logo_path        = "https://raw.githubusercontent.com/DE0CH/jarvis4/a47aadde23fe8355b30e6ba44dd9376be86a3fbd/app/assets/icon.png"
-    header_text      = "Sign in to Deyao's apps"
     footer_text      = "Private systems of Deyao Chen. Authorised users only."
   }
   # off; a PUT must carry all three fields (Cloudflare 12062 "service_token_inactivity must include enabled,
