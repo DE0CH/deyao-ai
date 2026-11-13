@@ -34,6 +34,20 @@ WebSocket to the session's own origin `https://<session id>-s.deyaochen.com/` wi
 (`DSH_WEB_ACCESS_ID/SECRET`, Secret dsh-web-secrets), keeps redirects and dsh's cookie under `/s/<id>/`, serves the UI's
 versioned static files from its own cache, and answers a paused or gone session with a page that says so.
 
+## The chat (`k8s/chat/`)
+
+Jarvis 4's chat at **https://chat.deyaochen.com** (DE0CH/jarvis4 `aviary/README.md`): aviary's pigeon and magpie (the
+same builds as YYC AI's), the app bundle `pigeon-app` (DE0CH/claudecodeui), Jarvis 4's hermit-jarvis and their Postgres
+`chat-db`; `.github/workflows/chat-pin.yml` pins the newest builds every 15 minutes. What is Deyao's own about it lives
+here, never in aviary or the app:
+
+- **Branding** (`k8s/chat/branding/`: the logo, the tab icons, the home-screen icons, the web manifest). The app is one
+  build for every deployment and holds neutral files under `/branding/` (claudecodeui docs/paseo-ui.md "Branding");
+  pigeon's initContainer `branding` copies these over them. After changing a file run `infra/branding.py`, which
+  writes `k8s/chat/branding.yaml` (the ConfigMap, as binaryData) and the files' hash into pigeon's pod template, and
+  commit both. Not a kustomize generator: Flux leaves image files out of what it builds from. Not a mount over the
+  bundle: the bundle is read-only in pigeon and a mount point it lacks cannot be made.
+
 ## Cloudflare (tofu)
 
 Deyao's Cloudflare account as code, so far its Access organisation: the one login page of every Access app of the
