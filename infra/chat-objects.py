@@ -217,7 +217,7 @@ def store():
         try:
             why = ("Jarvis 4 chat's Hetzner S3 " + ("access key" if "ACCESS" in k else "secret key") +
                    " (credential deyao-chat, project Cloud Code): buckets deyao-chat-magpie and deyao-chat-db only, denied"
-                   " on every other bucket (DE0CH/services infra/chat-objects.py); magpie's MAGPIE_S3_* and chat-db's"
+                   " on every other bucket (DE0CH/deyao-ai infra/chat-objects.py); magpie's MAGPIE_S3_* and chat-db's"
                    " Secret chat-db-s3")
             subprocess.run(["jarvis", "put-key", "chat", k, "--explain", why], stdin=open(p), check=True)
         finally:

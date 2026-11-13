@@ -1,9 +1,14 @@
-# services
+# deyao-ai
 
-Deyao's own services: things he runs for himself that are not part of any Jarvis. Jarvis 4's job is narrow (secrets
-and the lifecycle of Fly containers and runners); these only share its cluster as a tenant, in the namespace
-`services`, applied by Flux from this repo as a service account that can change nothing outside that namespace
-(DE0CH/jarvis4 `k8s/cluster/tenants/services.yaml` makes the namespace, its quota and that account).
+Deyao's own deployments (Deyao, 2026-11-13; until then this repo was DE0CH/services): what he runs for himself and
+how each is set up for him. The code of a product lives in its own repo with nothing of a deployment in it
+(DE0CH/aviary and DE0CH/claudecodeui for the chat, which YYC deploys too from DE0CH/YYC); the platform is
+DE0CH/jarvis4 (the kernel, the router, the session machines, the cluster). What differs for Deyao (pins, branding,
+settings, Cloudflare) is here.
+
+Everything here is a tenant of Jarvis 4's cluster, in the namespace `services`, applied by Flux from this repo's
+`k8s/` as a service account that can change nothing outside that namespace (DE0CH/jarvis4
+`k8s/cluster/tenants/services.yaml` makes the namespace, its quota and that account).
 
 ## Transcript search (`search/`, `k8s/search/`)
 

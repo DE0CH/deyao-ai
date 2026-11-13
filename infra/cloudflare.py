@@ -111,7 +111,7 @@ def main():
     vals["TUNNEL_TOKEN"] = call("GET", f"/accounts/{ACCOUNT}/cfd_tunnel/{tun['id']}/token")
     for host in (SEARCH_HOST, DSH_HOST, CHAT_HOST, CHAT_GW_HOST):
         rec = {"type": "CNAME", "name": host, "content": f"{tun['id']}.cfargotunnel.com", "proxied": True,
-               "comment": "tunnel services (DE0CH/services)"}
+               "comment": "tunnel services (DE0CH/deyao-ai)"}
         recs = call("GET", f"/zones/{ZONE}/dns_records?name={host}")
         call("PUT" if recs else "POST", f"/zones/{ZONE}/dns_records" + (f"/{recs[0]['id']}" if recs else ""), rec)
     fd = os.open(out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
