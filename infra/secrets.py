@@ -13,6 +13,8 @@ the old values back). The part's pod gets its annotation bumped so it restarts w
            CF_ACCESS_CLIENT_SECRET=env:DSH_WEB_ACCESS_SECRET (infra/cloudflare.py)
   chat-pigeon, chat-magpie, chat-hermit   the chat's services (k8s/chat), Secrets of the same names; every key from
            infra/chat-keys.py's file (`set -a; . FILE; set +a` first)
+  chat-openrouter                         hermit-jarvis's OpenRouter key for the conversation search's query embeddings:
+           HERMIT_OPENROUTER_KEY=env:OPENROUTER_API
   chat-db-magpie, chat-db-hermit          chat-db's role logins (basic-auth: username, password)
   chat-db-s3                              chat-db's Barman store: ACCESS_KEY_ID, SECRET_ACCESS_KEY
 Prints names only, never a value."""
@@ -27,6 +29,7 @@ PARTS = {  # part → (file, Secret name, manifest under k8s/ whose pod restarts
     "chat-pigeon": ("chat-pigeon.enc.yaml", "chat-pigeon", "chat/pigeon.yaml", "services/secrets-rev-chat-pigeon"),
     "chat-magpie": ("chat-magpie.enc.yaml", "chat-magpie", "chat/magpie.yaml", "services/secrets-rev-chat-magpie"),
     "chat-hermit": ("chat-hermit.enc.yaml", "chat-hermit", "chat/hermit.yaml", "services/secrets-rev-chat-hermit"),
+    "chat-openrouter": ("chat-openrouter.enc.yaml", "chat-openrouter", "chat/hermit.yaml", "services/secrets-rev-chat-openrouter"),
     # CloudNativePG reads these itself (no pod to restart)
     "chat-db-magpie": ("chat-db-magpie.enc.yaml", "chat-db-magpie", None, None),
     "chat-db-hermit": ("chat-db-hermit.enc.yaml", "chat-db-hermit", None, None),
