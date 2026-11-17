@@ -46,7 +46,9 @@ same builds as YYC AI's), the app bundle `pigeon-app` (DE0CH/claudecodeui), Jarv
 `chat-db`; `.github/workflows/chat-pin.yml` pins the newest builds every 15 minutes. What is Deyao's own about it lives
 here, never in aviary or the app:
 
-- **Settings** (`k8s/chat/settings.json`): the chat's name and language, the models a conversation's menu offers
+- **Settings** (`k8s/chat/settings.json`): the chat's name and language, the URL scheme of its iPhone app Jarvis Chat
+  (`signIn.appScheme`, the app's bundle id: pigeon's `/api/jarvis/app-signin` hands the Access token back to it;
+  DE0CH/claudecodeui docs/paseo-ui.md "The iOS app"), the models a conversation's menu offers
   (the first is the default) with each one's thinking levels, its context window when Claude Code does not know it,
   and the OpenRouter hosts of an OpenRouter model. hermit-jarvis reads it at its start and hands it to each session
   machine's gateway at boot (DE0CH/jarvis4 `aviary/src/settings.rs`, which refuses a file it cannot use); a change
