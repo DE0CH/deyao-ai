@@ -3,7 +3,8 @@ name: chat-pin
 # pinned by digest (never older than the current pin):
 #   pigeon, magpie  ghcr.io/de0ch/{pigeon,magpie}:<sha12> of DE0CH/aviary's newest release (made only when its CI passed)
 #   pigeon-app      ghcr.io/de0ch/pigeon-app:<sha12> of DE0CH/claudecodeui main's newest successful pigeon-app run
-#   hermit-jarvis   ghcr.io/de0ch/hermit-jarvis:latest (DE0CH/jarvis4 aviary.yml pushes it only after its tests)
+#   hermit-jarvis   ghcr.io/de0ch/hermit-jarvis:latest (DE0CH/jarvis4 aviary.yml pushes it only after its tests), and
+#                   only when it starts on k8s/chat/settings.json (`check-settings`, as chat-settings.yml)
 # A commit by this workflow with the deploy key PIN_DEPLOY_KEY; Flux rolls it out. DE0CH/jarvis4 aviary-pin.yml pins the
 # sessions' supervisor of the same aviary releases.
 on:
@@ -49,13 +50,28 @@ jobs:
           hj="$(crane config ghcr.io/de0ch/hermit-jarvis:latest 2>/dev/null | python3 -c 'import json,sys;print(json.load(sys.stdin)["config"]["Labels"].get("org.opencontainers.image.revision",""))' || true)"
           if [ -n "$hj" ]; then
             new="${hj::12}"; cur="$(grep -ho 'de0ch/hermit-jarvis:sha-[0-9a-f]*' $D/hermit.yaml | head -1 | cut -d- -f3 || true)"
-            if newer DE0CH/jarvis4 "$cur" "$new"; then pin hermit-jarvis "sha-$new" $D/hermit.yaml; fi
+            if newer DE0CH/jarvis4 "$cur" "$new"; then
+              # only a build that starts on the chat's settings (chat-settings.yml): a refused file would leave the
+              # new hermit-jarvis crash-looping; the run fails instead and the pin waits for the file to be fixed
+              if docker run --rm -v "$PWD/$D:/chat:ro" "ghcr.io/de0ch/hermit-jarvis:sha-$new" check-settings /chat/settings.json; then
+                pin hermit-jarvis "sha-$new" $D/hermit.yaml
+              else
+                echo "::error::hermit-jarvis sha-$new refuses k8s/chat/settings.json: not pinned"; hermit_refused=1
+              fi
+            fi
           fi
           git diff --stat
+          echo "hermit_refused=${hermit_refused:-0}" >> "$GITHUB_ENV"
       - name: push
         run: |
           git diff --quiet && exit 0
           git config user.name "services-ci"; git config user.email "ci@services.invalid"
           git commit -qam "chat: pin the newest builds [skip ci]"
-          for attempt in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0; sleep 5; done
+          for attempt in 1 2 3; do
+            if git pull -q --rebase origin main && git push -q origin HEAD:main; then exit 0; fi
+            sleep 5
+          done
           exit 1
+      - name: a refused hermit-jarvis fails the run
+        if: env.hermit_refused == '1'
+        run: exit 1
