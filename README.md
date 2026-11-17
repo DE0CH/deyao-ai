@@ -60,6 +60,8 @@ here, never in aviary or the app:
   writes `k8s/chat/branding.yaml` (the ConfigMap, as binaryData) and the files' hash into pigeon's pod template, and
   commit both. Not a kustomize generator: Flux leaves image files out of what it builds from. Not a mount over the
   bundle: the bundle is read-only in pigeon and a mount point it lacks cannot be made.
+  The tab and home-screen icons are drawn by `infra/chat-icon.py` (a chat bubble with the Jarvis 4 ring as a badge;
+  `--app-icon` writes the iPhone app's icon into a claudecodeui checkout): run it, then `infra/branding.py`.
 
 ## Cloudflare (tofu)
 
