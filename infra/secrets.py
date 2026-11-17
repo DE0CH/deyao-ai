@@ -30,6 +30,8 @@ PARTS = {  # part → (file, Secret name, manifest under k8s/ whose pod restarts
     "chat-magpie": ("chat-magpie.enc.yaml", "chat-magpie", "chat/magpie.yaml", "services/secrets-rev-chat-magpie"),
     "chat-hermit": ("chat-hermit.enc.yaml", "chat-hermit", "chat/hermit.yaml", "services/secrets-rev-chat-hermit"),
     "chat-openrouter": ("chat-openrouter.enc.yaml", "chat-openrouter", "chat/hermit.yaml", "services/secrets-rev-chat-openrouter"),
+    # hermit-jarvis's token to Jarvis 4's fabric hermit (FABRIC_HERMIT_GATEWAY_TOKEN; jarvis4 docs/PLAN-fabric.md)
+    "chat-hermit-fabric": ("chat-hermit-fabric.enc.yaml", "chat-hermit-fabric", "chat/hermit.yaml", "services/secrets-rev-chat-hermit-fabric"),
     # CloudNativePG reads these itself (no pod to restart)
     "chat-db-magpie": ("chat-db-magpie.enc.yaml", "chat-db-magpie", None, None),
     "chat-db-hermit": ("chat-db-hermit.enc.yaml", "chat-db-hermit", None, None),
