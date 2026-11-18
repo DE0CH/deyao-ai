@@ -5,8 +5,7 @@
 # Secrets: CF_ACCESS_ORG_TOKEN, DEYAO_TOFU_R2_ACCESS_KEY_ID/_SECRET_ACCESS_KEY (from the Jarvis 4 store `infra`).
 name: cloudflare
 on:
-  push:
-    branches: [main]
+  push:  # every branch plans (the gate merges a branch when it is green); main alone applies
     paths:
       - cloudflare/tofu/**
       - .github/workflows/cloudflare.yml
@@ -14,7 +13,7 @@ on:
     - cron: "*/30 * * * *"
   workflow_dispatch:
 concurrency:
-  group: cloudflare
+  group: "cloudflare-${{ github.ref }}"
   cancel-in-progress: false
 permissions:
   contents: read
@@ -43,11 +42,12 @@ jobs:
       - name: plan
         run: |
           set +e
-          tofu plan -out=tfplan -detailed-exitcode -no-color > plan.txt 2>&1; code=$?
+          lock=""; [ "${{ github.ref }}" = refs/heads/main ] || lock="-lock=false"   # a branch only reads the state
+          tofu plan $lock -out=tfplan -detailed-exitcode -no-color > plan.txt 2>&1; code=$?
           cat plan.txt; echo "code=$code" >> "$GITHUB_OUTPUT"
         id: plan
       - name: apply
-        if: steps.plan.outputs.code == '2'
+        if: steps.plan.outputs.code == '2' && github.ref == 'refs/heads/main'
         run: tofu apply -no-color tfplan
       - name: plan failed
         if: steps.plan.outputs.code == '1'

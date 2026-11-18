@@ -4,8 +4,7 @@ name: chat-settings
 # that names no `reasoning` of its own (Deyao, 2026-11-17: each model's thinking level is its own choice, no default).
 # chat-pin.yml runs the same check on a new hermit-jarvis before pinning it.
 on:
-  push:
-    branches: [main]
+  push:  # every branch: the gate waits for it
     paths: [k8s/chat/settings.json, k8s/chat/hermit.yaml, .github/workflows/chat-settings.yml]
   pull_request:
     paths: [k8s/chat/settings.json, k8s/chat/hermit.yaml, .github/workflows/chat-settings.yml]

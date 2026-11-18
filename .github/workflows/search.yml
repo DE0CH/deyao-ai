@@ -3,8 +3,7 @@ name: search
 # inside the image build), then pinned by digest in k8s/search/search.yaml (a commit by this workflow, pushed with the
 # deploy key PIN_DEPLOY_KEY; Flux rolls it out). The package is public: the cluster pulls it without a login.
 on:
-  push:
-    branches: [main]
+  push:  # every branch (the gate merges a branch when this is green); main alone pins and moves :latest
     paths: [search/**, .github/workflows/search.yml]
   workflow_dispatch:
 permissions:
@@ -12,7 +11,7 @@ permissions:
   packages: write
   attestations: write
   id-token: write
-concurrency: { group: search, cancel-in-progress: false }
+concurrency: { group: "search-${{ github.ref }}", cancel-in-progress: false }
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -34,7 +33,7 @@ jobs:
           labels: org.opencontainers.image.source=https://github.com/DE0CH/deyao-ai
           tags: |
             ghcr.io/de0ch/services-search:${{ steps.tag.outputs.sha }}
-            ghcr.io/de0ch/services-search:latest
+            ${{ github.ref == 'refs/heads/main' && 'ghcr.io/de0ch/services-search:latest' || '' }}
       - uses: actions/attest-build-provenance@v2
         with:
           subject-name: ghcr.io/de0ch/services-search
