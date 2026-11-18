@@ -19,7 +19,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: dsh-web
-          image: ghcr.io/de0ch/services-dsh-web:sha-0bfe645ace77@sha256:39bc022a3498ea4ec82cf2af75543976dc29191e1a7b71bb3368fa22bad0c3a4
+          image: ghcr.io/de0ch/services-dsh-web:sha-33e77c1044af@sha256:3f6e1199554c5a231a5fd8cfcac6b2528002d20c6c5250b7c9091cd5c3d4adba
           ports: [{ containerPort: 8095 }]
           env:
             - { name: PORT, value: "8095" }
