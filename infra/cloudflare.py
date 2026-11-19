@@ -23,7 +23,9 @@
 Access apps:
   "Transcript search"  search.deyaochen.com  Deyao's email (the page at /), or the service token transcript-search
   "DeepSeek Harness"   dsh.deyaochen.com     Deyao's email, or the service token dsh-web (health checks)
-  "Jarvis 4 chat"      chat.deyaochen.com    Deyao's email (pigeon checks the Access token again itself)
+  "Jarvis 4 chat"      chat.deyaochen.com    Deyao's email (pigeon checks the Access token again itself); the service
+                                             token jarvis-chat-check (aviary deploy.yml's site check: the page and
+                                             pigeon answering, no identity)
   "Jarvis 4 chat gateway" chat-gw.deyaochen.com  the service token aviary-gateway only (the sandbox token in each request
                        says which session it is; hermit-jarvis checks it)
 """
@@ -95,8 +97,11 @@ def main():
         {"name": "Deyao", "decision": "allow", "include": [{"email": {"email": EMAIL}}]},
         {"name": "checks with the dsh-web token (held by dsh-web itself)", "decision": "non_identity",
          "include": [{"service_token": {"token_id": dtok["id"]}}]}])
+    ctok = service_token("jarvis-chat-check", vals, "JARVIS_CHAT_CHECK_ACCESS_ID", "JARVIS_CHAT_CHECK_ACCESS_SECRET")
     caud = access_app("Jarvis 4 chat", CHAT_HOST, [
-        {"name": "Deyao", "decision": "allow", "include": [{"email": {"email": EMAIL}}]}])
+        {"name": "Deyao", "decision": "allow", "include": [{"email": {"email": EMAIL}}]},
+        {"name": "the deploy run's site check (DE0CH/aviary deploy.yml)", "decision": "non_identity",
+         "include": [{"service_token": {"token_id": ctok["id"]}}]}])
     gtok = service_token("aviary-gateway", vals, "AVIARY_GW_ACCESS_ID", "AVIARY_GW_ACCESS_SECRET")
     htok = service_token("hermit-jarvis", vals, "HERMIT_JARVIS_ACCESS_ID", "HERMIT_JARVIS_ACCESS_SECRET")
     gaud = access_app("Jarvis 4 chat gateway", CHAT_GW_HOST, [

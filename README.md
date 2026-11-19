@@ -39,29 +39,12 @@ WebSocket to the session's own origin `https://<session id>-s.deyaochen.com/` wi
 (`DSH_WEB_ACCESS_ID/SECRET`, Secret dsh-web-secrets), keeps redirects and dsh's cookie under `/s/<id>/`, serves the UI's
 versioned static files from its own cache, and answers a paused or gone session with a page that says so.
 
-## The chat (`k8s/chat/`)
+## The chat's Secrets (`k8s/secrets/chat-*`)
 
-Jarvis 4's chat at **https://chat.deyaochen.com** (DE0CH/jarvis4 `aviary/README.md`): aviary's pigeon and magpie (the
-same builds as YYC AI's), the app bundle `pigeon-app` (DE0CH/claudecodeui), Jarvis 4's hermit-jarvis and their Postgres
-`chat-db`; `.github/workflows/chat-pin.yml` pins the newest builds every 15 minutes. What is Deyao's own about it lives
-here, never in aviary or the app:
-
-- **Settings** (`k8s/chat/settings.json`): the chat's name and language, the URL scheme of its iPhone app Jarvis Chat
-  (`signIn.appScheme`, the app's bundle id: pigeon's `/api/jarvis/app-signin` hands the Access token back to it;
-  DE0CH/claudecodeui docs/paseo-ui.md "The iOS app"), the models a conversation's menu offers
-  (the first is the default) with each one's thinking levels, its context window when Claude Code does not know it,
-  and the OpenRouter hosts of an OpenRouter model. hermit-jarvis reads it at its start and hands it to each session
-  machine's gateway at boot (DE0CH/jarvis4 `aviary/src/settings.rs`, which refuses a file it cannot use); a change
-  rolls hermit. The Jarvis 4 app's own New session picker is the router's (DE0CH/jarvis4 `router/harness.go`
-  `modelCatalog`): a model added here is added there too.
-- **Branding** (`k8s/chat/branding/`: the logo, the tab icons, the home-screen icons, the web manifest). The app is one
-  build for every deployment and holds neutral files under `/branding/` (claudecodeui docs/paseo-ui.md "Branding");
-  pigeon's initContainer `branding` copies these over them. After changing a file run `infra/branding.py`, which
-  writes `k8s/chat/branding.yaml` (the ConfigMap, as binaryData) and the files' hash into pigeon's pod template, and
-  commit both. Not a kustomize generator: Flux leaves image files out of what it builds from. Not a mount over the
-  bundle: the bundle is read-only in pigeon and a mount point it lacks cannot be made.
-  The tab and home-screen icons are drawn by `infra/chat-icon.py` (a chat bubble with the Jarvis 4 ring as a badge;
-  `--app-icon` writes the iPhone app's icon into a claudecodeui checkout): run it, then `infra/branding.py`.
+Jarvis chat at **https://chat.deyaochen.com** is DE0CH/aviary's `jarvis/` (its manifests, settings, branding and
+icons; a push to aviary's main is the deploy, aviary `docs/DEPLOY.md`), applied into this namespace by DE0CH/jarvis4's
+tenant `chat`. Its Secrets stay here, SOPS-encrypted like the rest: `infra/chat-keys.py` makes the random credentials
+once and `infra/secrets.py chat-…` writes them (the commands are in chat-keys.py).
 
 ## Cloudflare (tofu)
 

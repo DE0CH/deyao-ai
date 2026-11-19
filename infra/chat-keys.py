@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Every random credential of Jarvis 4's chat (k8s/chat; DE0CH/jarvis4 aviary/README.md), made once and written to OUT
+"""Every random credential of Jarvis chat (DE0CH/aviary jarvis/deploy; its Secrets are this repository's k8s/secrets/chat-*), made once and written to OUT
 (mode 600) as KEY=VALUE lines, so the three services' Secrets agree (a pair token is <CALLER>_TOKEN_<CALLEE> on one side
 and <CALLEE>_ACCEPT_<CALLER> on the other). Prints names only.
 
