@@ -11,7 +11,7 @@ the old values back). The part's pod gets its annotation bumped so it restarts w
   tunnel   tunnel.enc.yaml, Secret tunnel-token — token=env:TUNNEL_TOKEN (infra/cloudflare.py)
   dsh-web  dsh-web.enc.yaml, Secret dsh-web-secrets — CF_ACCESS_CLIENT_ID=env:DSH_WEB_ACCESS_ID,
            CF_ACCESS_CLIENT_SECRET=env:DSH_WEB_ACCESS_SECRET (infra/cloudflare.py)
-  chat-pigeon, chat-magpie, chat-hermit   the chat's services (k8s/chat), Secrets of the same names; every key from
+  chat-pigeon, chat-magpie, chat-hermit   the chat's services (DE0CH/aviary jarvis/deploy), Secrets of the same names; every key from
            infra/chat-keys.py's file (`set -a; . FILE; set +a` first)
   chat-openrouter                         hermit-jarvis's OpenRouter key for the conversation search's query embeddings:
            HERMIT_OPENROUTER_KEY=env:OPENROUTER_API

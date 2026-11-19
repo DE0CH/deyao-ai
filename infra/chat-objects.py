@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Object storage for Jarvis 4's chat (k8s/chat): the buckets deyao-chat-magpie (magpie's blobs) and deyao-chat-db
+"""Object storage for Jarvis 4's chat (DE0CH/aviary jarvis/deploy): the buckets deyao-chat-magpie (magpie's blobs) and deyao-chat-db
 (chat-db's Barman store), and the credential "deyao-chat" that may use those two and nothing else. Hetzner project
 "Cloud Code" (2827255), as DE0CH/jarvis4 infra/objects-key.py does for the router's. Values never print.
 
