@@ -1,0 +1,20 @@
+// Worker jarvis-chat-apps (src/index.js, chat-apps/README.md) on Deyao's Cloudflare account, on the route
+// chat.deyaochen.com/apps/*, behind the Access app "Jarvis 4 chat" that covers the whole host (infra/cloudflare.py).
+// Deployed by .github/workflows/jarvis-chat-apps.yml; the account id comes from CLOUDFLARE_ACCOUNT_ID at deploy.
+{
+  "name": "jarvis-chat-apps",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  // no workers.dev or preview address: the only way in is the route, behind Access
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "chat.deyaochen.com/apps/*", "zone_name": "deyaochen.com" }],
+  "vars": {
+    "ACCESS_TEAM": "de0ch",
+    // the Access app "Jarvis 4 chat"'s audience tag (hermit-jarvis's HERMIT_ACCESS_AUD)
+    "ACCESS_AUD": "a8442f994d2dc640346e5d411f37c257999208663a88c579a6540e34360a05ce",
+    "DOWNLOAD_NAME": "Jarvis-Chat.apk"
+  },
+  "r2_buckets": [{ "binding": "APPS", "bucket_name": "jarvis-chat-apps" }],
+  "observability": { "enabled": true }
+}

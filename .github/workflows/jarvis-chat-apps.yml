@@ -1,0 +1,36 @@
+# Tests and deploys the Worker jarvis-chat-apps (chat-apps/worker: Jarvis Chat's Android app at
+# chat.deyaochen.com/apps/android.apk, from R2 bucket jarvis-chat-apps, with its route) on every push touching it;
+# main alone deploys. A Worker deploy is atomic: downloads in flight finish on the old version.
+# Secrets: CF_JARVIS_CHAT_APPS_WORKER_TOKEN (token jarvis-chat-apps-worker: Workers Scripts and R2 read on Deyao's
+# account, Workers Routes on deyaochen.com) and DEYAO_CF_ACCOUNT_ID.
+name: jarvis-chat-apps
+on:
+  push:  # every branch (the gate merges a branch when this is green); main alone deploys
+    paths:
+      - chat-apps/worker/**
+      - .github/workflows/jarvis-chat-apps.yml
+  workflow_dispatch:
+concurrency:
+  group: "jarvis-chat-apps-${{ github.ref }}"
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: chat-apps/worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+      - run: npx --yes wrangler@4.151.0 deploy --dry-run --outdir /tmp/bundle
+      - name: deploy
+        if: github.ref == 'refs/heads/main'
+        run: npx --yes wrangler@4.151.0 deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_JARVIS_CHAT_APPS_WORKER_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DEYAO_CF_ACCOUNT_ID }}
