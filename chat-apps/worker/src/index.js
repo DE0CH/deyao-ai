@@ -1,5 +1,5 @@
 // Worker jarvis-chat-apps (chat-apps/README.md): Jarvis Chat's Android app at chat.deyaochen.com/apps/android.apk, from the edge.
-// The APK is the object android.apk in R2 bucket jarvis-chat-apps, which DE0CH/claudecodeui's yyc-android workflow
+// The APK is the object android.apk in R2 bucket jarvis-chat-apps, which DE0CH/aviary's app-android workflow
 // replaces after every green build on main. Behind the Access app "Jarvis 4 chat" (infra/cloudflare.py); it checks
 // Access's token itself too (authenticate by token). Each Cloudflare location keeps the file in its cache under the
 // object's ETag, so a download comes from the edge and a new upload is served from the next request on.
